@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/menu"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#4D000000"
+    android:clickable="true"
+    android:focusable="false">
+    <LinearLayout
+        android:id="@+id/source_switcher_container"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:paddingStart="6dp"
+        android:paddingEnd="6dp"
+        android:paddingTop="0dp"
+        android:paddingBottom="0dp"
+        android:background="#4D000000"
+        android:visibility="gone"
+        android:focusable="false">
+        <ImageButton
+            android:id="@+id/source_switcher_prev"
+            android:layout_width="40dp"
+            android:layout_height="match_parent"
+            android:src="@android:drawable/ic_media_previous"
+            android:background="@drawable/focus_background"
+            android:contentDescription="Previous Source"
+            android:focusable="true"
+            android:focusableInTouchMode="true"
+            android:scaleType="centerInside"
+            android:nextFocusRight="@id/source_switcher_text" />
+        <TextView
+            android:id="@+id/source_switcher_text"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:textColor="@android:color/white"
+            android:textSize="18sp"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:background="@drawable/focus_background"
+            android:focusable="true"
+            android:focusableInTouchMode="true"
+            android:nextFocusLeft="@id/source_switcher_prev"
+            android:nextFocusRight="@id/source_switcher_next" />
+        <ImageButton
+            android:id="@+id/source_switcher_next"
+            android:layout_width="40dp"
+            android:layout_height="match_parent"
+            android:src="@android:drawable/ic_media_next"
+            android:background="@drawable/focus_background"
+            android:contentDescription="Next Source"
+            android:focusable="true"
+            android:focusableInTouchMode="true"
+            android:scaleType="centerInside"
+            android:nextFocusLeft="@id/source_switcher_text" />
+    </LinearLayout>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="horizontal">
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/group"
+            android:layout_width="180dp"
+            android:layout_height="match_parent"
+            android:focusable="true"
+            android:focusableInTouchMode="true"
+            android:nextFocusUp="@+id/source_switcher_prev"
+            android:layout_marginEnd="1dp"
+            android:paddingStart="4dp"
+            android:paddingEnd="10dp"
+            android:paddingTop="0dp"
+            android:paddingBottom="10dp"
+            android:background="#4D000000"/>
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/list"
+            android:layout_width="250dp"
+            android:layout_height="match_parent"
+            android:descendantFocusability="afterDescendants"
+            android:background="#4D000000"
+            android:focusable="true"
+            android:focusableInTouchMode="true" />
+    </LinearLayout>
+</LinearLayout>

@@ -1,0 +1,26 @@
+*.iml
+.gradle
+.idea
+/local.properties
+/.idea/caches
+/.idea/libraries
+/.idea/modules.xml
+/.idea/workspace.xml
+/.idea/navEditor.xml
+/.idea/assetWizardSettings.xml
+# 调研用的上游源码副本，不属于本工程
+/upstream-my-tv
+/upstream-mytv
+/upstream-owntv
+/upstream-yourtv
+.DS_Store
+/build
+/app/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+files
+.kotlin/
+app/release/
+.README.md

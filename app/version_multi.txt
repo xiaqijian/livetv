@@ -1,0 +1,38 @@
+{
+  "version_code": 229,
+  "version_name": "2.2.9",
+  "apk_url": "https://github.com/horsemail/yourtv/releases/download/v2.2.9/yourtv_v2.2.9.apk",
+  "apk_name": "yourtv_v2.2.9.apk",
+  "description": "優化頻道菜單和線路選擇顯示操作等\n修復分組/直播源加密/進度條等BUG",
+  "apks": {
+    "universal": {
+      "name": "yourtv_v2.2.8_universal.apk",
+      "url": "https://github.com/horsemail/yourtv/releases/download/v2.2.8/yourtv_v2.2.8_universal.apk.apk"
+      "name": "yourtv_v2.2.9_universal.apk",
+      "url": "https://github.com/horsemail/yourtv/releases/download/v2.2.9/yourtv_v2.2.9_universal.apk.apk"
+    },
+    "armeabi-v7a": {
+      "name": "yourtv_v2.2.8_armeabi-v7a.apk",
+      "url": "https://github.com/horsemail/yourtv/releases/download/v2.2.8/yourtv_v2.2.8_armeabi-v7a.apk"
+      "name": "yourtv_v2.2.9_armeabi-v7a.apk",
+      "url": "https://github.com/horsemail/yourtv/releases/download/v2.2.9/yourtv_v2.2.9_armeabi-v7a.apk"
+    },
+    "arm64-v8a": {
+      "name": "yourtv_v2.2.8_arm64-v8a.apk",
+      "url": "https://github.com/horsemail/yourtv/releases/download/v2.2.8/yourtv_v2.2.8_arm64-v8a.apk"
+      "name": "yourtv_v2.2.9_arm64-v8a.apk",
+      "url": "https://github.com/horsemail/yourtv/releases/download/v2.2.9/yourtv_v2.2.9_arm64-v8a.apk"
+    },
+    "x86": {
+      "name": "yourtv_v2.2.8_x86.apk",
+      "url": "https://github.com/horsemail/yourtv/releases/download/v2.2.8/yourtv_v2.2.8_x86.apk"
+      "name": "yourtv_v2.2.9_x86.apk",
+      "url": "https://github.com/horsemail/yourtv/releases/download/v2.2.9/yourtv_v2.2.9_x86.apk"
+    },
+    "x86_64": {
+      "name": "yourtv_v2.2.8_x86_64.apk",
+      "url": "https://github.com/horsemail/yourtv/releases/download/v2.2.8/yourtv_v2.2.8_x86_64.apk"
+      "name": "yourtv_v2.2.9_x86_64.apk",
+      "url": "https://github.com/horsemail/yourtv/releases/download/v2.2.9/yourtv_v2.2.9_x86_64.apk"
+    }
+  }
