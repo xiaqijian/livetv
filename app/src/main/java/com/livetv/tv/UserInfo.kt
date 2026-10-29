@@ -625,10 +625,14 @@ object UserInfoManager {
         }
     }
 
-    @Suppress("UNREACHABLE_CODE")
+    // 非 const，避免编译器把下方代码判定为不可达（不可达代码中智能转换会失效）
+    private val disableUpstreamAuth = true
+
     fun validateKey(key: String, remoteUsers: List<RemoteUserInfo>): RemoteUserInfo? {
         // 本应用不启用上游的测试码授权机制，任何测试码都视为有效
-        return RemoteUserInfo(key, "29991231", "vip", "", 99, emptyList())
+        if (disableUpstreamAuth) {
+            return RemoteUserInfo(key, "29991231", "vip", "", 99, emptyList())
+        }
         // 記錄輸入參數
         Log.d(TAG, "validateKey called with key: $key, remoteUsers size: ${remoteUsers.size}")
 
