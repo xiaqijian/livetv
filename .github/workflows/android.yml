@@ -3,6 +3,7 @@ name: Android CI
 on:
   push:
     branches: [ main, master ]
+    tags: [ 'v*' ]
   pull_request:
   workflow_dispatch:
 
@@ -81,3 +82,52 @@ jobs:
           name: livetv-debug-apk
           path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: warn
+
+  # 打 v* 标签时自动创建 GitHub Release 并附上 APK
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download APK
+        uses: actions/download-artifact@v4
+        with:
+          name: livetv-debug-apk
+          path: dist
+
+      - name: Rename and gather info
+        shell: bash
+        run: |
+          cd dist
+          for f in *.apk; do mv "$f" "LiveTV-${GITHUB_REF_NAME}-debug.apk"; done
+          ls -lh
+          echo "BUILD_DATE=$(TZ=Asia/Shanghai date '+%Y-%m-%d %H:%M %Z')" >> "$GITHUB_ENV"
+          echo "APK_NAME=$(ls *.apk | head -n1)" >> "$GITHUB_ENV"
+          echo "APK_SIZE=$(du -h *.apk | cut -f1)" >> "$GITHUB_ENV"
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.apk
+          name: 电视直播 ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+          body: |
+            ## 电视直播 ${{ github.ref_name }}
+
+            | 项目 | 内容 |
+            |---|---|
+            | 构建时间 | ${{ env.BUILD_DATE }} |
+            | 文件 | `${{ env.APK_NAME }}`（${{ env.APK_SIZE }}） |
+            | 最低系统 | Android 6.0（API 23） |
+            | 频道数 | 441 个（央视 / 卫视 / 地方 / 电影 / 纪录） |
+            | 签名 | debug 签名，可直接覆盖安装同签名旧版 |
+
+            ### 安装
+
+            - U 盘：拷入 APK → 电视「我的应用」或「媒体中心」→ 打开安装
+            - adb：`adb install ${{ env.APK_NAME }}`
+
+            ### 说明
+
+            首次打开即加载内置的 441 个频道，断网也能播；设置 -「订阅源」-「恢复默认源」会联网拉取最新列表。
