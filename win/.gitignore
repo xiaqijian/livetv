@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+build/
+dist/
+*.spec
+# 打包时从 Android 资源复制的内置源，不入库
+channels.txt
+# 运行时生成
+config.json
+cache.m3u
+.write-test

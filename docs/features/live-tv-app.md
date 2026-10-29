@@ -49,6 +49,9 @@
 | AC-4 自定义源 | 设置页「订阅源」→ `dialog_source` 对话框输入地址 → `MainViewModel.importSourceFromUrl` → 写入 `active_source`，重启由 `loadActiveSource` 恢复 | 单测覆盖地址校验；端到端待真机 |
 | AC-5 恢复默认源 | 对话框「恢复默认源」→ 清 `configUrl` + `MainViewModel.restoreDefaultSource()` | 待真机确认 |
 | AC-6 故障可诊断 | 地址为空/非 http 有明确 toast；下载失败沿用 `sources_download_error`；解析 0 频道沿用 `channel_read_error` | 单测覆盖前两类 |
+| AC-7 播放成功=首帧渲染 | `PlayerFragment` 改用 `Player.Listener.onRenderedFirstFrame()` 判定，不再用 `onIsPlayingChanged` / `STATE_READY` | 代码已改，待 CI 编译 + 真机 |
+| AC-8 慢源不无限转圈 | 新增首帧看门狗（20 秒）：超时先切备用线路（最多 2 次），仍无画面则提示 `err_source_timeout` 并停止重试 | 代码已改，待 CI 编译 + 真机 |
+| AC-9 编码不支持有提示 | `onPlayerError` 按解码错误码（4003/4004/4005/3003）给 `err_codec_unsupported`，不再静默忽略；关闭自动切源时也会提示原因 | 代码已改，待 CI 编译 + 真机 |
 
 ## 3. 📎 技术方案（编码时填写）
 
@@ -64,3 +67,16 @@
 7. CI：`.github/workflows/android.yml`（JDK 17 + setup-android，跑 `testDebugUnitTest` 与 `assembleDebug`，上传 APK 构件）
 
 **验证状态（如实记录）**：本机无 JDK / Android SDK / adb，编译与单测均未在本地执行过，唯一可信验证来源是 GitHub Actions 结果；集成测试与 E2E 不具备条件（无设备无模拟器），由真机手工走查替代。
+
+**2026-10-29 播放判定加固（由 Windows 版问题反向同步）**：
+
+Windows 版实测暴露了三类问题，其中前两类在电视版同样存在，本次一并修复。完整记录见 `docs/pitfalls.md`。
+
+1. **首帧判据**：原来 `onIsPlayingChanged(true)` 就算播放成功。`isPlaying` 只代表「缓冲够了可以开始播」，首帧可能还没渲染，慢源会表现为「显示在播、画面全黑」。改为 `onRenderedFirstFrame()`。
+2. **首帧看门狗**：新增 20 秒超时。超时先 `sourceUp()` 换线（`firstFrameRetryMax = 2`），仍不行则 `err_source_timeout` 提示换台。若超时检查时已 `isPlaying && STATE_READY`（音频先行），则不干预，避免误杀。
+3. **重置语义**：`resetFirstFrameWatchdog(resetRetry: Boolean)`——换频道清零重试计数，换线路保留。否则「超时→换线→计数归零」会死循环。
+4. **编码错误不再静默**：`onPlayerError` 对 `ERROR_CODE_DECODING_FORMAT_UNSUPPORTED / DECODING_FAILED / DECODING_FORMAT_EXCEEDS_CAPABILITIES / PARSING_CONTAINER_UNSUPPORTED` 直接提示 `err_codec_unsupported`，不走重试链（换线对编码问题无效）。
+5. **错误被吞**：`if (!SP.autoSwitchSource) return` 原位置在所有提示之前，导致默认配置（自动切源关闭）下坏源完全没有提示。改为：不自动换线也要 `setErrInfo` 说明原因。
+6. **文案**：新增 `err_source_timeout`、`err_codec_unsupported`，values / values-zh-rCN / values-zh-rTW 三语言同步。
+
+**已验证的部分**：`Player.Listener.onRenderedFirstFrame()` 与 4 个解码错误码常量均已核对 media3 官方 API 文档（1.5.1 存在，无需 `@UnstableApi`）。**未验证的部分**：本机无法编译，Kotlin 改动需 CI 出包 + 真机确认后才算通过。
