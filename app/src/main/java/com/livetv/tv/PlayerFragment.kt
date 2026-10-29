@@ -80,6 +80,15 @@ class PlayerFragment : Fragment() {
     private var playbackStartTime = 0L
     private val bufferingTimestamps = mutableListOf<Long>()
     private var lastBufferingTime = 0L
+    // 首帧看门狗：慢源会长时间停在缓冲态，既不报错也不出画面。
+    // ExoPlayer 的 isPlaying / STATE_READY 只代表「能开始播」，不代表「画面已经出来」，
+    // 所以必须用 onRenderedFirstFrame 判定成功，并用超时兜底，避免无限转圈。
+    private val firstFrameTimeout = 20_000L
+    private var firstFrameReached = false
+    private var firstFrameWatchdogArmed = false
+    private var firstFrameRetryTimes = 0
+    private val firstFrameRetryMax = 2
+    private val firstFrameWatchdog = Runnable { onFirstFrameTimeout() }
     private var isSourceButtonVisible = false
     private var lastSwitchSourceTime = 0L
     private val switchSourceDebounce = 2_000L
@@ -97,6 +106,63 @@ class PlayerFragment : Fragment() {
             isStable = true
             saveStableSource(tvModel!!)
             Log.d(TAG, "Stable source saved via stableSourceCheckRunnable: ${tvModel!!.tv.title}")
+        }
+    }
+
+    /**
+     * 重置首帧判定。
+     * @param resetRetry 仅换频道时为 true；换线路时必须保留计数，否则会无限重试
+     */
+    private fun resetFirstFrameWatchdog(resetRetry: Boolean = false) {
+        firstFrameReached = false
+        firstFrameWatchdogArmed = false
+        if (resetRetry) firstFrameRetryTimes = 0
+        handler.removeCallbacks(firstFrameWatchdog)
+    }
+
+    /** 开始在缓冲态计时；只在还没出首帧时arm一次 */
+    private fun armFirstFrameWatchdog() {
+        if (firstFrameReached || firstFrameWatchdogArmed) return
+        firstFrameWatchdogArmed = true
+        handler.removeCallbacks(firstFrameWatchdog)
+        handler.postDelayed(firstFrameWatchdog, firstFrameTimeout)
+        Log.d(TAG, "首帧看门狗启动: ${firstFrameTimeout}ms")
+    }
+
+    /** 收到首帧渲染回调或确认有声音在播：判定为真的能看 */
+    private fun cancelFirstFrameWatchdog(reason: String) {
+        if (!firstFrameReached) {
+            Log.i(TAG, "首帧已出来($reason): ${tvModel?.tv?.title}")
+        }
+        firstFrameReached = true
+        firstFrameWatchdogArmed = false
+        handler.removeCallbacks(firstFrameWatchdog)
+    }
+
+    /**
+     * 超时仍未出画面：先换备用线路（最多 firstFrameRetryMax 次），
+     * 仍不行就明确告诉用户是这个台有问题，而不是继续无声转圈。
+     */
+    private fun onFirstFrameTimeout() {
+        firstFrameWatchdogArmed = false
+        val tv = tvModel ?: return
+        if (firstFrameReached || !isResumed || isInPictureInPictureMode) return
+        // 已经能播放（例如音频先行、画面解码稍慢）就不再干预，避免误杀
+        if (player?.isPlaying == true && player?.playbackState == Player.STATE_READY) {
+            Log.d(TAG, "首帧超时检查时已在播放，跳过: ${tv.tv.title}")
+            return
+        }
+
+        val backupCount = tv.tv.uris.count { it.isNotBlank() }
+        Log.w(TAG, "首帧超时 ${firstFrameTimeout}ms: ${tv.tv.title}, 备用线路=$backupCount, 已重试=$firstFrameRetryTimes")
+        if (backupCount > 1 && firstFrameRetryTimes < firstFrameRetryMax) {
+            firstFrameRetryTimes++
+            tv.setErrInfo("")
+            (activity as? MainActivity)?.sourceUp()
+            // sourceUp 若被 debounce 拦掉，这里再给一次观察窗口
+            armFirstFrameWatchdog()
+        } else {
+            tv.setErrInfo(R.string.err_source_timeout.getString())
         }
     }
 
@@ -351,6 +417,8 @@ class PlayerFragment : Fragment() {
                     playbackStartTime = System.currentTimeMillis()
                     playbackCallback?.onPlaybackStarted()
                     lastStopTime = 0L // 重置停止时间
+                    // 注意：isPlaying 只代表「能开始播」，不代表画面已渲染，
+                    // 这里不能判定首帧成功，否则慢源会重新变成「显示在播却黑屏」。
                     Log.d(TAG, "${tv.tv.title} is playing")
 
                 } else {
@@ -361,7 +429,16 @@ class PlayerFragment : Fragment() {
                 }
             }
 
+            override fun onRenderedFirstFrame() {
+                // 唯一可靠的「真的出画面了」信号
+                cancelFirstFrameWatchdog("renderedFirstFrame")
+            }
+
             override fun onPlaybackStateChanged(state: Int) {
+                // 缓冲计时必须在 autoSwitchSource 判断之前，该开关默认关闭
+                if (state == Player.STATE_BUFFERING) {
+                    armFirstFrameWatchdog()
+                }
                 if (!SP.autoSwitchSource) return
                 if (tvModel == null || player == null) {
                     return
@@ -450,6 +527,20 @@ class PlayerFragment : Fragment() {
 
             override fun onPlayerError(error: PlaybackException) {
                 Log.w(TAG, "Player error: ${error.errorCode}, message=${error.message}")
+                // 解码能力不足 / 编码不受支持：换线路解决不了，必须给明确提示，
+                // 原实现把这类错误静默忽略，用户只会一直看到转圈。
+                if (error.errorCode in listOf(
+                        PlaybackException.ERROR_CODE_DECODING_FORMAT_UNSUPPORTED,
+                        PlaybackException.ERROR_CODE_DECODING_FAILED,
+                        PlaybackException.ERROR_CODE_DECODING_FORMAT_EXCEEDS_CAPABILITIES,
+                        PlaybackException.ERROR_CODE_PARSING_CONTAINER_UNSUPPORTED
+                    )) {
+                    handler.removeCallbacks(firstFrameWatchdog)
+                    firstFrameWatchdogArmed = false
+                    tvModel?.setErrInfo(R.string.err_codec_unsupported.getString())
+                    Log.w(TAG, "编码不受支持，已提示换台: ${tvModel?.tv?.title}")
+                    return
+                }
                 if (tvModel?.tv?.playerType == PlayerType.WEBVIEW) {
                     // 仅忽略非网络相关错误，网络错误仍需触发切换
                     if (error.errorCode !in listOf(
@@ -526,7 +617,16 @@ class PlayerFragment : Fragment() {
                 }
 
                 if (!SP.autoSwitchSource) {
-                    Log.w(TAG, "Auto-switch disabled, ignoring error: ${error.message}")
+                    // 原来这里直接 return，等于把源报错吞掉，用户只会看到一直转圈。
+                    // 即使不自动切源，也必须让用户知道是源的问题。
+                    Log.w(TAG, "Auto-switch disabled, showing error to user: ${error.message}")
+                    tvModel?.setErrInfo(
+                        if (error.errorCode in listOf(
+                                PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_TIMEOUT,
+                                PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED
+                            )) R.string.err_source_timeout.getString()
+                        else R.string.play_error.getString()
+                    )
                     return
                 }
                 if (tvModel == null) {
@@ -859,6 +959,8 @@ class PlayerFragment : Fragment() {
         }
         lastSwitchSourceTime = currentTime
         playbackStartTime = currentTime
+        // 换源后重新判定首帧，否则慢源会一直卡在「旧的成功状态」里
+        resetFirstFrameWatchdog()
 
         // 获取源数量和当前序列号
         val totalSources = tvModel.tv.uris.filter { it.isNotBlank() }.size
@@ -945,6 +1047,7 @@ class PlayerFragment : Fragment() {
         }
         lastSwitchSourceTime = currentTime
         this.tvModel = tvModel
+        resetFirstFrameWatchdog(resetRetry = true)
         val stableSource = SP.getStableSources().firstOrNull { it.id == tvModel.tv.id }
         if (stableSource != null) {
             tvModel.tv = tvModel.tv.copy(

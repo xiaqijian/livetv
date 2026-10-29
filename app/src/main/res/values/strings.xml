@@ -151,6 +151,8 @@
     <string name="channel_read_error">Channel read error</string>
     <string name="channel_request_error">Channel request error</string>
     <string name="play_error">Play error</string>
+    <string name="err_source_timeout">This channel timed out. The source is slow or offline. Try another channel.</string>
+    <string name="err_codec_unsupported">This channel uses a video codec your device does not support. Try another channel.</string>
     <string name="file_not_exist">File not found</string>
     <string name="channel_not_exist">Channel not found</string>
     <string name="config_restored">Config restored</string>

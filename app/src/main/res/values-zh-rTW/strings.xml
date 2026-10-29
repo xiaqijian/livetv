@@ -141,6 +141,8 @@
     <string name="channel_read_error">無法讀取頻道</string>
     <string name="channel_request_error">頻道請求錯誤</string>
     <string name="play_error">播放錯誤</string>
+    <string name="err_source_timeout">該頻道長時間沒有畫面，可能是源太慢或已失效，請換台</string>
+    <string name="err_codec_unsupported">該頻道的視頻編碼目前設備不支援，請換台</string>
     <string name="file_not_exist">文件不存在</string>
     <string name="channel_not_exist">頻道爲空</string>
     <string name="config_restored">已恢複到默認配置</string>
