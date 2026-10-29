@@ -554,8 +554,36 @@ class MainViewModel : ViewModel() {
 
     /** 供 UI 调用：恢复内置默认源 */
     fun restoreDefaultSource() {
-        reset(context)
-        R.string.source_restored.showToast()
+        viewModelScope.launch {
+            val ok = syncBuiltinSource()
+            if (!ok) {
+                Log.w(TAG, "restoreDefaultSource: 内置地址均不可用，回退本地快照")
+                reset(context)
+            }
+            R.string.source_restored.showToast()
+        }
+    }
+
+    /**
+     * 依次尝试内置订阅地址，任一成功即返回 true。
+     * 强制下载以拿到最新频道列表，不走 24 小时缓存。
+     */
+    private suspend fun syncBuiltinSource(): Boolean {
+        for (url in BuiltinSource.URLS) {
+            try {
+                Log.i(TAG, "syncBuiltinSource: trying $url")
+                importFromUrl(url, forceDownload = true)
+                delay(2_000L)
+                if (listModel.isNotEmpty()) {
+                    SP.configUrl = url
+                    Log.i(TAG, "syncBuiltinSource: success from $url")
+                    return true
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "syncBuiltinSource failed: $url, ${e.message}")
+            }
+        }
+        return false
     }
 
     fun reset(context: Context) {
