@@ -16,6 +16,8 @@ Android 6.0 及以上的电视、投影与盒子可用的直播频道 App，用�
 
 | 画面 | 说明 |
 |---|---|
+| ![应用图标](screenshots/icon-preview.png) | 应用图标：矢量绘制，蓝青渐变 + 电视播放符号 |
+| ![TV banner](screenshots/banner-preview.png) | Android TV 桌面 banner（320×180） |
 | ![播放界面](screenshots/090901.jpg) | 播放中：左上角显示台标与频道号，按遥控器菜单键从右侧滑出面板 |
 | ![设置面板](screenshots/530.jpg) | 右侧半透明设置面板：顶部按钮组 + 下面一排开关（换台反转、显示时间、开机自启等） |
 

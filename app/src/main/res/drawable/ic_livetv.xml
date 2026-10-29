@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- 圆角方形底：蓝到青的对角渐变 -->
+    <path android:pathData="M0,26 Q0,0 26,0 L82,0 Q108,0 108,26 L108,82 Q108,108 82,108 L26,108 Q0,108 0,82 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="0"
+                android:startY="0"
+                android:endX="108"
+                android:endY="108"
+                android:type="linear">
+                <item android:offset="0" android:color="#FF2563EB" />
+                <item android:offset="1" android:color="#FF06B6D4" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- 电视屏幕外框 -->
+    <path
+        android:fillColor="@android:color/transparent"
+        android:pathData="M30,34 L78,34 Q86,34 86,42 L86,60 Q86,68 78,68 L30,68 Q22,68 22,60 L22,42 Q22,34 30,34 Z"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="5" />
+
+    <!-- 播放三角 -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M48,41 L68,51 L48,61 Z" />
+
+    <!-- 底座 -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M42,74 L66,74 Q68,74 68,76 L68,77 Q68,79 66,79 L42,79 Q40,79 40,77 L40,76 Q40,74 42,74 Z" />
+</vector>
