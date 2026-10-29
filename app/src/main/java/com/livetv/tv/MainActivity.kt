@@ -37,7 +37,10 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import androidx.lifecycle.LiveData
+import androidx.lifecycle.MediatorLiveData
 import androidx.lifecycle.MutableLiveData
+import java.util.Collections
+import java.util.WeakHashMap
 import kotlinx.coroutines.*
 import androidx.lifecycle.asFlow
 import kotlinx.coroutines.flow.takeWhile
@@ -73,6 +76,9 @@ class MainActivity : AppCompatActivity() {
     private val delayHideSetting = 1 * 60 * 1000L
     lateinit var gestureDetector: GestureDetector
     private var server: SimpleServer? = null
+    // 已注册过监听的 TVModel（弱引用：换源后旧对象可被回收，不会无限累积）
+    private val watchedModels: MutableSet<TVModel> =
+        Collections.newSetFromMap(WeakHashMap<TVModel, Boolean>())
     private lateinit var updateManager: UpdateManager
     private val sharedPrefs by lazy { getSharedPreferences("UpdatePrefs", MODE_PRIVATE) }
 
@@ -453,7 +459,10 @@ class MainActivity : AppCompatActivity() {
                     }
             }
 
-            server = SimpleServer(this, viewModel)
+            // 安全：本地配置服务默认不启动。原实现会在 34567 端口常驻监听且无任何鉴权，
+            // 同一局域网内任意设备都能改本机的频道源 / HTTP 代理 / EPG（可被用来劫持流量）。
+            // 如需手机扫码配置，应改为用户显式开启后再调用 SimpleServer。
+            server = null
 
             viewModel.updateConfig()
             if (playerFragment.isAdded && !playerFragment.isHidden) {
@@ -468,9 +477,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun <T> LiveData<T>.throttle(durationMs: Long): LiveData<T> {
-        val result = MutableLiveData<T>()
+        // 用 MediatorLiveData 代替 observeForever：无观察者时不订阅，回收时自动解绑，
+        // 不会像原实现那样每次调用都永久泄漏一个 observer + 一个 LiveData。
+        val result = MediatorLiveData<T>()
         var lastEmission = 0L
-        observeForever { value ->
+        result.addSource(this) { value ->
             val now = System.currentTimeMillis()
             if (now - lastEmission >= durationMs) {
                 result.value = value
@@ -482,6 +493,11 @@ class MainActivity : AppCompatActivity() {
 
     private fun watch() {
         viewModel.listModel.forEach { tvModel ->
+            // watch() 在换组 / 换源 / 设置变更时会被重复调用，
+            // 原实现每次都新建 LiveData 并 observe，观察者数量随操作次数无上限累积。
+            if (!watchedModels.add(tvModel)) {
+                return@forEach
+            }
             // 为每个 tvModel 创建独立的防抖实例
             val errInfoThrottled = tvModel.errInfo.throttle(1000)
             errInfoThrottled.observe(this) { _ ->

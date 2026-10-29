@@ -53,7 +53,10 @@ class UpdateManager(
     private val context: Context = activity
     private val sharedPrefs: SharedPreferences = activity.getSharedPreferences("UpdatePrefs", Context.MODE_PRIVATE)
     private val TAG = "UpdateManager"
+    @Suppress("UNREACHABLE_CODE")
     internal suspend fun getRelease(): ReleaseResponse? {
+        // 安全：自有构建，不再向原作者服务器拉取版本信息
+        return null
         val urls = Utils.getUrls(VERSION_URL).toMutableList().apply { add(VERSION_URL) }
 
         // 检查缓存

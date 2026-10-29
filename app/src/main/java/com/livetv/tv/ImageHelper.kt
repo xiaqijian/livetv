@@ -108,6 +108,8 @@ class ImageHelper(private val context: Context) {
         if (dir.exists()) {
             dir.deleteRecursively()
         }
+        // 同步清理内存索引，否则 Map 会随下载过的台徽数量无限增长
+        files.clear()
     }
 
     companion object {

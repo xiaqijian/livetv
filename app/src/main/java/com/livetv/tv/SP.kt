@@ -44,6 +44,8 @@ object SP {
     private const val KEY_FULL_SCREEN_MODE = "full_screen_mode"
     private const val RESOLUTION_CACHE_PREFIX = "resolution_"
     private const val RESOLUTION_CACHE_TIMESTAMP_PREFIX = "resolution_timestamp_"
+    private const val RESOLUTION_CACHE_COUNT = "resolution_cache_count"
+    private const val RESOLUTION_CACHE_MAX = 400
     private const val CACHE_DURATION = 24 * 60 * 60 * 1000L // 24 小时
 
     // 移除静态常量，改用动态默认值
@@ -292,6 +294,16 @@ object SP {
         val key = RESOLUTION_CACHE_PREFIX + url.hashCode()
         val timestampKey = RESOLUTION_CACHE_TIMESTAMP_PREFIX + url.hashCode()
         sp.edit().apply {
+            // 超过上限先整体清空，避免 SharedPreferences 条目随频道数无限增长
+            val count = sp.getInt(RESOLUTION_CACHE_COUNT, 0) + 1
+            if (count > RESOLUTION_CACHE_MAX) {
+                sp.all.keys
+                    .filter { it.startsWith(RESOLUTION_CACHE_PREFIX) }
+                    .forEach { remove(it) }
+                putInt(RESOLUTION_CACHE_COUNT, 1)
+            } else {
+                putInt(RESOLUTION_CACHE_COUNT, count)
+            }
             putString(key, resolution)
             putLong(timestampKey, System.currentTimeMillis())
             apply()
