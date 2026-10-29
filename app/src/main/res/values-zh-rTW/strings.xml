@@ -92,7 +92,7 @@
     <string name="show_source_button">顯示換源按鈕</string>
     <string name="auto_switch_source">自動換源</string>
     <string name="verify_user_error">測試碼驗驗證失敗</string>
-    <string name="verify_user">測試碼</string>
+    <string name="verify_user">訂閱源</string>
     <string name="initialization_error">initialization_error</string>
     <string name="signature_conflict">安裝失敗：APK 籤名與已安裝應用不匹配，請卸載現有應用後重試</string>
     <string name="enable_unknown_sources">請啟用未知來源安裝</string>

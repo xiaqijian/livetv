@@ -1,16 +1,26 @@
 # 电视直播（LiveTV）
 
-海信安卓电视（Android 8.0 及以上）可用的直播频道 App，用遥控器操作，打开就能看。
+Android 6.0 及以上的电视、投影与盒子可用的直播频道 App，用遥控器操作，打开就能看。
 
 本工程基于开源项目 [horsemail/yourtv](https://github.com/horsemail/yourtv)（MIT 协议）二次开发，改造点见文末。
 
 ## 功能
 
-- **开箱可看**：内置一份公开频道源（央视、卫视、教育台），装完直接有列表
+- **开箱可看**：内置 441 个频道（央视 / 卫视 / 地方 / 电影 / 纪录）的离线快照，装完直接有列表，断网也能播
 - **自己换源**：设置页「订阅源」里用遥控器输入 m3u / txt 订阅地址，重启后仍然生效
-- **一键恢复**：同个对话框里可恢复内置默认源
+- **一键更新**：同个对话框里点「恢复默认源」，会优先联网拉取内置订阅地址的最新列表，拉不到再用离线快照
 - 遥控器方向键换台、频道分组、EPG 节目单、频道收藏（沿用上游能力）
 - 已移除上游的测试码授权、个人收款入口、私有云端基础设施与在线更新检查
+
+## 界面预览
+
+| 画面 | 说明 |
+|---|---|
+| ![播放界面](screenshots/090901.jpg) | 播放中：左上角显示台标与频道号，按遥控器菜单键从右侧滑出面板 |
+| ![设置面板](screenshots/530.jpg) | 右侧半透明设置面板：顶部按钮组 + 下面一排开关（换台反转、显示时间、开机自启等） |
+
+> 截图取自上游原始版本，整体布局与本版本一致。本版本已去掉「测试码 / 赞赏 / 加入群组 / 更新应用」，
+> 原「测试码」按钮改成了「订阅源」。
 
 ## 构建
 
@@ -33,18 +43,19 @@
 - U 盘：把 apk 拷进 U 盘，插到电视上，用电视自带的文件管理打开安装（首次需在设置里允许安装未知来源应用）
 - 或局域网：电视开启开发者模式后用 `adb install livetv_v1.0.0.apk`
 
-## 内置频道源怎么维护
+## 频道源怎么维护
 
-`app/src/main/res/raw/channels.txt` 由脚本生成，数据来自 [iptv-org](https://github.com/iptv-org/iptv) 的中国频道列表：
+内置地址在 `app/src/main/java/com/livetv/tv/BuiltinSource.kt`，按顺序尝试：
 
-```
-# 1. 下载最新的中国频道列表，覆盖输入快照
-#    https://iptv-org.github.io/iptv/countries/cn.m3u
-# 2. 重新生成
-powershell -File tools/gen-default-channels.ps1
-```
+1. `https://cdn.jsdelivr.net/gh/vbskycn/iptv@master/tv/iptv4.m3u` — 主地址，国内可直连
+2. `https://fastly.jsdelivr.net/gh/vbskycn/iptv@master/tv/iptv4.m3u` — 备用节点
+3. `https://raw.githubusercontent.com/vbskycn/iptv/master/tv/iptv4.m3u` — 兜底，部分网络不可达
 
-频道中文名与分组在脚本的 `$map` 里维护，想加台、改台名直接改那里。
+`app/src/main/res/raw/channels.txt` 是同一份源的离线快照（441 台），三个地址全失败时使用。
+更新快照：下载上面的 m3u，剔除 `group-title` 为「更新时间 / 支持作者 / 公告 / 广告」的条目，
+以 UTF-8 无 BOM 覆盖该文件。
+
+> 旧脚本 `tools/gen-default-channels.ps1` 基于 iptv-org，其流地址多为海外 IP，国内电视基本播不动，已不推荐。
 
 ## 免责声明
 

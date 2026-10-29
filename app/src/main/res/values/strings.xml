@@ -93,7 +93,7 @@
     <string name="show_source_button">Show source button</string>
     <string name="auto_switch_source">Auto switch source</string>
     <string name="verify_user_error">Test code verification failed</string>
-    <string name="verify_user">SubSource</string>
+    <string name="verify_user">Source</string>
     <string name="initialization_error">Initialization error</string>
     <string name="signature_conflict">Install failed: APK signature mismatch, uninstall app</string>
     <string name="enable_unknown_sources">Enable unknown sources</string>
